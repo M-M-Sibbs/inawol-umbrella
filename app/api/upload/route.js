@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { isAuthenticated } from "../../../lib/auth";
 
 export const runtime = "nodejs";
+// Allow large request bodies (videos up to 500MB) on this route.
+export const maxDuration = 60;
 
 // Media upload endpoint.
-// In production we recommend Vercel Blob (S3/R2 compatible). To enable it:
-//   1) `npm i @vercel/blob`
-//   2) Add a Blob store in your Vercel project (sets BLOB_READ_WRITE_TOKEN).
-//   3) Uncomment the block below.
+// Uses Vercel Blob storage when BLOB_READ_WRITE_TOKEN is set (production).
+// Falls back to a base64 data URL for local development only.
 //
 // Limits per spec: images up to 20MB, videos up to 500MB.
 const MAX = {
@@ -45,21 +45,24 @@ export async function POST(req) {
       );
     }
 
-    // --- Vercel Blob upload (recommended for Vercel deployment) ---
-    // import { put } from "@vercel/blob";
-    // const blob = await put(`projects/${Date.now()}-${file.name}`, file, {
-    //   access: "public",
-    // });
-    // return NextResponse.json({ url: blob.url, kind });
+    // --- Vercel Blob upload (production) ---
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      const { put } = await import("@vercel/blob");
+      const safeName = (file.name || "upload").replace(/[^a-zA-Z0-9._-]/g, "_");
+      const blob = await put(`projects/${Date.now()}-${safeName}`, file, {
+        access: "public",
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+      return NextResponse.json({ url: blob.url, kind });
+    }
 
-    // Fallback when no blob store is configured: return a base64 data URL
-    // so the flow works end-to-end in development.
+    // --- Fallback for local dev (no blob store configured) ---
     const buf = Buffer.from(await file.arrayBuffer());
     const dataUrl = `data:${file.type};base64,${buf.toString("base64")}`;
     return NextResponse.json({
       url: dataUrl,
       kind,
-      note: "Configure @vercel/blob for production storage.",
+      note: "Using base64 fallback. Set BLOB_READ_WRITE_TOKEN for production storage.",
     });
   } catch (err) {
     console.error("upload error", err);
