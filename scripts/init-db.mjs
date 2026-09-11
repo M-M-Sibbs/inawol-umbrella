@@ -27,6 +27,20 @@ async function main() {
         media_type TEXT, media_url TEXT, testimonial TEXT, testimonial_author TEXT,
         created_at TEXT DEFAULT (datetime('now'))
       )`,
+      `CREATE TABLE IF NOT EXISTS lessons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL, subject TEXT, level TEXT, description TEXT,
+        thumbnail_url TEXT, stream_uid TEXT, preview_seconds INTEGER DEFAULT 0,
+        price_usd REAL NOT NULL DEFAULT 0, published INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lesson_id INTEGER NOT NULL, email TEXT NOT NULL, phone TEXT,
+        method TEXT, amount REAL, poll_url TEXT, paynow_reference TEXT,
+        status TEXT DEFAULT 'created', access_token TEXT,
+        created_at TEXT DEFAULT (datetime('now')), paid_at TEXT
+      )`,
     ],
     "write"
   );

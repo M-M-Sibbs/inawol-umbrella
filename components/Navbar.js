@@ -24,14 +24,13 @@ export default function Navbar() {
     >
       <nav className="mx-auto max-w-7xl px-5 sm:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="relative inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyanglow to-[#7C5CFF]">
-            <span className="absolute inset-0 rounded-lg bg-cyanglow blur-md opacity-50 group-hover:opacity-80 transition" />
-            <svg viewBox="0 0 24 24" className="relative h-4 w-4 text-space" fill="currentColor">
-              <path d="M12 2a7 7 0 00-7 7v3H4a1 1 0 00-1 1 9 9 0 0018 0 1 1 0 00-1-1h-1V9a7 7 0 00-7-7z" />
-            </svg>
+          <span className="relative inline-flex h-9 w-9 items-center justify-center">
+            <span className="absolute inset-0 rounded-lg bg-cyanglow blur-md opacity-30 group-hover:opacity-60 transition" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/umbrella-icon.png" alt="Inawol Umbrella Technologies" className="relative h-9 w-9 object-contain" />
           </span>
           <span className="font-display font-bold tracking-tight text-[15px] leading-none">
-            Umbrella<span className="text-cyanglow">.</span>
+            Inawol Umbrella<span className="text-cyanglow">.</span>
           </span>
         </Link>
 

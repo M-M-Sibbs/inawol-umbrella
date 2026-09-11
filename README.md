@@ -11,6 +11,7 @@ ready to deploy on **Vercel**.
 - **Five services** — AI Agents, Automation, Web, Mobile, AI Training.
 - **Projects portfolio** (`/projects`) — live website / case study / demo links that open in new tabs, plus image **and video** media, tech tags, results and testimonials.
 - **Lead-capture chatbot** — floating widget that welcomes, builds curiosity, understands needs, then softly captures **email** and **WhatsApp number** in a natural, interest-building conversation. Every lead is scored and stored.
+- **Online tutoring** (`/tutoring`) — pay-per-lesson video courses with EcoCash / InnBucks / OMari via Paynow, secure Cloudflare Stream playback, and signed tokens tied to confirmed payments.
 - **Secure admin dashboard** (`/dashboard`) — password-protected with server-side sessions, IP rate limiting, and security headers. Add, **edit and delete** projects, **upload images (≤20MB) and videos (≤500MB)**, and view all captured leads with scores.
 - **API routes** — `/api/chat`, `/api/leads`, `/api/projects`, `/api/upload`.
 
@@ -33,14 +34,13 @@ Without Turso credentials the app uses a local `local.db` file so you can develo
 
 ## Set up Turso
 
-```bash
-# install the CLI: https://docs.turso.tech
-turso db create umbrella
-turso db show umbrella --url            # -> TURSO_DATABASE_URL
-turso db tokens create umbrella         # -> TURSO_AUTH_TOKEN
-```
+Create a database at [turso.tech](https://turso.tech) (the web dashboard is easiest — no CLI needed):
 
-Put both values in `.env` (and in your Vercel project's Environment Variables), then run `npm run db:init`.
+1. **Create Database**, name it `umbrella`, pick the nearest region.
+2. Copy the **Database URL** → `TURSO_DATABASE_URL`
+3. Click **Create Token**, copy it → `TURSO_AUTH_TOKEN`
+
+Put both in `.env` (and in your Vercel project's Environment Variables), then run `npm run db:init`.
 
 ## Secure the admin dashboard
 
@@ -60,20 +60,68 @@ Security measures built in:
 - **Security headers** — HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, a strict Content-Security-Policy, and a locked-down `Permissions-Policy`, applied site-wide via `middleware.js`.
 - **Obscure the URL (optional)** — set `ADMIN_PATH=/dashboard-something-random` in your env to move the dashboard off the default path entirely.
 
-## Set up Turso
+## Online tutoring (pay-per-lesson)
+
+The `/tutoring` page sells individual video lessons. Students pay with **EcoCash,
+InnBucks or OMari** through Paynow, and the video unlocks the moment payment is confirmed.
+
+### 1. Paynow (payments)
+
+Register as a merchant at [paynow.co.zw](https://www.paynow.co.zw), then set:
+
+```
+PAYNOW_INTEGRATION_ID=...
+PAYNOW_INTEGRATION_KEY=...
+PAYNOW_RESULT_URL=https://your-site.vercel.app/api/paynow/callback
+PAYNOW_RETURN_URL=https://your-site.vercel.app/tutoring/return
+```
+
+The result URL is a server-to-server callback — Paynow posts payment confirmations
+there directly, and every message is SHA512-signed and verified, so a payment can't
+be faked from the browser. Prices are always read from the database, never the client.
+
+### 2. Cloudflare Stream (secure video)
+
+Create a Stream-enabled Cloudflare account and an API token with `Stream:Edit`:
+
+```
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_STREAM_TOKEN=...
+CLOUDFLARE_STREAM_KEY_ID=...      # optional but recommended
+CLOUDFLARE_STREAM_KEY_JWK=...     # base64 of the JWK, for signed playback
+```
+
+Upload lesson videos from **Dashboard → Lessons**. The file goes straight from your
+browser to Cloudflare (bypassing Vercel's upload size limits), and only the video ID
+is stored in your database.
+
+### How the download protection works
+
+Videos are streamed as adaptive HLS, not served as a downloadable file, and playback
+is gated behind short-lived signed tokens tied to a confirmed payment. The public
+lesson list never exposes the video ID, and a token for one lesson cannot open another.
+
+**An honest caveat:** no browser video can be made 100% download-proof — screen
+recording always exists. This setup is the practical industry standard: it removes any
+easy "save video" path, ties access to a real payment, and makes shared links expire.
+
+## Deploy to Vercel
 
 1. Push this repo to GitHub.
 2. Import it in Vercel.
-3. Add environment variables: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`.
-4. (Optional) Create a **Blob store** in Vercel for production media uploads — this sets `BLOB_READ_WRITE_TOKEN` automatically. Then enable the Blob block in `app/api/upload/route.js` and run `npm i @vercel/blob`.
-5. Deploy. After the first deploy, run `npm run db:init` locally against the Turso DB (or call the API once) to create tables — tables are also auto-created on first request.
+3. Add your environment variables (see `.env.example` for the full list).
+4. (Optional) Create a **Blob store** in Vercel for project image uploads — this sets `BLOB_READ_WRITE_TOKEN` automatically.
+5. Deploy. Tables are auto-created on first request, or run `npm run db:init` against the Turso DB.
 
 ## Media uploads
 
-`app/api/upload/route.js` enforces the spec limits (images 20MB, videos 500MB) and
-accepts PNG/JPG/WEBP for images and MP4/MOV/WebM for videos. In development it returns
-a base64 data URL so the flow works offline; in production switch on the Vercel Blob
-block (commented in the file) for real object storage.
+`app/api/upload/route.js` handles **project** images/videos (images 20MB, videos 500MB;
+PNG/JPG/WEBP and MP4/MOV/WebM). It uses Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set,
+and falls back to a base64 data URL locally.
+
+Note that Vercel serverless functions cap request bodies at ~4.5MB, so large **project**
+videos should be hosted elsewhere and linked via the "paste a media URL" field. **Lesson**
+videos are unaffected — they upload directly to Cloudflare Stream.
 
 ## Chatbot
 

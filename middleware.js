@@ -9,6 +9,12 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const customPath = ADMIN_PATH !== "/dashboard";
 
+  // API routes handle their own auth (and Paynow's server-to-server callback
+  // has no session cookie), so never apply the admin redirect/404 logic here.
+  if (pathname.startsWith("/api/")) {
+    return withSecurityHeaders(NextResponse.next());
+  }
+
   // Block the legacy /admin path entirely so it stops being a target.
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return new NextResponse("Not found", { status: 404 });
@@ -63,9 +69,11 @@ function withSecurityHeaders(response) {
   const scriptSrc = isDev
     ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
     : "script-src 'self' 'unsafe-inline'";
+  // Cloudflare Stream needs: the player iframe (frame-src) and direct
+  // browser->Cloudflare uploads from the dashboard (connect-src).
   const connectSrc = isDev
-    ? "connect-src 'self' ws: wss:"
-    : "connect-src 'self'";
+    ? "connect-src 'self' ws: wss: https://upload.videodelivery.net https://*.cloudflarestream.com https://api.cloudflare.com"
+    : "connect-src 'self' https://upload.videodelivery.net https://*.cloudflarestream.com https://api.cloudflare.com";
 
   headers.set(
     "Content-Security-Policy",
@@ -77,9 +85,12 @@ function withSecurityHeaders(response) {
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob: https:",
       connectSrc,
+      // Lesson video player (Cloudflare Stream).
+      "frame-src 'self' https://iframe.videodelivery.net https://*.cloudflarestream.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
-      "form-action 'self'",
+      // Paynow redirects the browser to its hosted checkout page.
+      "form-action 'self' https://www.paynow.co.zw",
     ].join("; ")
   );
 

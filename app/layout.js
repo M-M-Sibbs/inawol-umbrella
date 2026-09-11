@@ -11,7 +11,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata = {
   title: "Inawol Umbrella Technologies — AI Agents, Automation & Digital Products",
   description:
-    "Umbrella Technologies builds AI agents, intelligent automations and digital products that help organizations operate faster, smarter and more profitably. AI Agent Development, Automation, Web & Mobile Development and AI Training in Zimbabwe.",
+    "Inawol Umbrella Technologies builds AI agents, intelligent automations and digital products that help organizations operate faster, smarter and more profitably. AI Agent Development, Automation, Web & Mobile Development, AI Training and Online Tutoring in Zimbabwe.",
   keywords: [
     "AI Agent Development Zimbabwe",
     "AI Automation Zimbabwe",
@@ -19,11 +19,21 @@ export const metadata = {
     "Mobile App Development Zimbabwe",
     "AI Training Zimbabwe",
     "AI Consulting Zimbabwe",
+    "Online Tutoring Zimbabwe",
   ],
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-32.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Inawol Umbrella Technologies",
     description: COMPANY.subtext,
     type: "website",
+    images: ["/logo.png"],
   },
 };
 

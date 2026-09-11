@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import LessonsManager from "./LessonsManager";
 
 const EMPTY = {
   title: "", industry: "", description: "", technologies: "",
@@ -127,7 +128,7 @@ export default function DashboardClient() {
             <span className="font-display font-bold">Dashboard</span>
           </div>
           <div className="flex gap-2 items-center">
-            {["projects", "leads"].map((t) => (
+            {["projects", "lessons", "leads"].map((t) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`rounded-full px-4 py-1.5 text-sm capitalize transition ${
                   tab === t ? "bg-cyanglow text-space font-semibold" : "text-white/60 hover:text-white"
@@ -280,6 +281,10 @@ export default function DashboardClient() {
               </div>
             </div>
           </div>
+        )}
+
+        {tab === "lessons" && (
+          <LessonsManager onAuthError={() => router.replace(loginPath())} flash={flash} />
         )}
 
         {tab === "leads" && (
