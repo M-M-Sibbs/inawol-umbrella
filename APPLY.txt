@@ -1,0 +1,28 @@
+FIX FOR THE FAILED VERCEL BUILD
+================================
+The build failed because app/services/[slug]/page.js imported components via
+"@/components/..." that either don't exist under those names in your repo or the
+@/ alias wasn't resolving. These replacement files are SELF-CONTAINED — they
+import nothing from your repo, so they build no matter what.
+
+COPY THESE OVER THE ONES IN YOUR REAL REPO (C:\dev\inawol-new\inawol-umbrella):
+
+  app\services\[slug]\page.js   <-- replace
+  app\sitemap.js                <-- replace
+  app\robots.js                 <-- replace (same as before, safe)
+  components\JsonLd.js          <-- replace
+  lib\seo.js                    <-- replace
+
+Then in C:\dev\inawol-new\inawol-umbrella run:
+
+  git add .
+  git commit -m "Fix SEO build: self-contained service pages, sitemap, seo helpers"
+  git push origin main
+
+Vercel will rebuild. When it goes GREEN (Ready), check:
+  https://inawol.store/sitemap.xml                  -> XML
+  https://inawol.store/robots.txt                   -> text
+  https://inawol.store/services/ai-agent-development -> page
+
+Then in Google Search Console, remove the old sitemap entry and submit:
+  sitemap.xml
